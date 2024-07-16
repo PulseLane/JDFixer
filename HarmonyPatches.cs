@@ -1,7 +1,7 @@
-﻿using BeatSaber.PerformancePresets;
-using HarmonyLib;
+﻿using HarmonyLib;
 using System;
 using System.Linq;
+using System.Reflection;
 
 namespace JDFixer
 {
@@ -25,7 +25,7 @@ namespace JDFixer
             // noteJumpValue is only equal to the offset when the base game settings is Dynamic Default.
 
             // Will just have to make a note to users as instructions. Not worth trying to find the map when in TA, Campaigns or MP
-            float noteJumpStartBeatOffset = noteJumpValue;  
+            float noteJumpStartBeatOffset = noteJumpValue;
 
             float mapNJS = startNoteJumpMovementSpeed;
             Plugin.Log.Debug("mapNJS:" + mapNJS.ToString());
@@ -47,7 +47,7 @@ namespace JDFixer
             }
 
             // 1.26.0-1.29.0 Feature update
-            if (PluginConfig.Instance.use_offset && PluginConfig.Instance.legacy_display_enabled && 
+            if (PluginConfig.Instance.use_offset && PluginConfig.Instance.legacy_display_enabled &&
                 PluginConfig.Instance.use_rt_pref == false && PluginConfig.Instance.use_jd_pref == false)
             {
                 if (PluginConfig.Instance.slider_setting == 0)
@@ -66,12 +66,12 @@ namespace JDFixer
                 if (mapNJS <= PluginConfig.Instance.lower_threshold || mapNJS >= PluginConfig.Instance.upper_threshold)
                 {
                     Plugin.Log.Debug("Using Threshold");
-                    
+
                     //return;
                     desiredJumpDis = BeatmapUtils.CalculateJumpDistance(startBpm, mapNJS, noteJumpStartBeatOffset);
                     goto SongSpeed; // Yes, a goto.
                 }
-                
+
                 var rt_pref = PluginConfig.Instance.rt_preferredValues.FirstOrDefault(x => x.njs <= mapNJS);
                 Plugin.Log.Debug("Using Preference");
 
@@ -165,30 +165,13 @@ namespace JDFixer
     }
 
 
-    [HarmonyPatch(typeof(StandardLevelScenesTransitionSetupDataSO), "Init")]
-    [HarmonyPatch(new Type[] { 
-        typeof(string), typeof(BeatmapKey), typeof(BeatmapLevel), typeof(OverrideEnvironmentSettings),
-        typeof(ColorScheme), typeof(ColorScheme), typeof(GameplayModifiers), typeof(PlayerSpecificSettings),
-        typeof(PracticeSettings), typeof(EnvironmentsListModel), typeof(AudioClipAsyncLoader), typeof(BeatmapDataLoader),
-        typeof(PerformancePreset),
-        typeof(string), typeof(BeatmapLevelsModel), typeof(bool), typeof(bool),
-        typeof(RecordingToolManager.SetupData) },
-        new ArgumentType[] { ArgumentType.Normal, ArgumentType.Ref, ArgumentType.Normal, ArgumentType.Normal,
-        ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal,
-        ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal,
-        ArgumentType.Normal,
-        ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal,
-        ArgumentType.Normal} )]
-
-    //string gameMode, in BeatmapKey beatmapKey, BeatmapLevel beatmapLevel, OverrideEnvironmentSettings overrideEnvironmentSettings,
-    //ColorScheme overrideColorScheme, ColorScheme beatmapOverrideColorScheme, GameplayModifiers gameplayModifiers, PlayerSpecificSettings playerSpecificSettings,
-    //PracticeSettings practiceSettings, EnvironmentsListModel environmentsListModel, AudioClipAsyncLoader audioClipAsyncLoader, BeatmapDataLoader beatmapDataLoader,
-    //PerformancePreset performancePreset
-    //string backButtonText, BeatmapLevelsModel beatmapLevelsModel = null, bool useTestNoteCutSoundEffects = false, bool startPaused = false,
-    //RecordingToolManager.SetupData? recordingToolData = null
-
+    [HarmonyPatch]
     internal class StandardLevelScenesTransitionSetupDataSOPatch
     {
+        private static MethodBase TargetMethod() => AccessTools.FirstMethod(typeof(StandardLevelScenesTransitionSetupDataSO),
+            m => m.Name == nameof(StandardLevelScenesTransitionSetupDataSO.Init) &&
+                 m.GetParameters().All(p => p.ParameterType != typeof(IBeatmapLevelData)));
+
         internal static void Postfix(GameplayModifiers gameplayModifiers, PracticeSettings practiceSettings)
         {
             BeatmapInfo.speedMultiplier = gameplayModifiers.songSpeedMul;
