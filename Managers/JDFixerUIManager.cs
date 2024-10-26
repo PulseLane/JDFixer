@@ -91,9 +91,6 @@ namespace JDFixer.Managers
 
         private void MissionSelection_didSelectMissionLevelEvent_CC(MissionSelectionMapViewController arg1, MissionNode arg2)
         {
-            DiffcultyBeatmapUpdated(new BeatmapKey(), null);
-            /*
-
             // Yes, we must check for both arg2.missionData and arg2.missionData.beatmapCharacteristic:
             // If a map is not dled, missionID and beatmapDifficulty will be correct, but beatmapCharacteristic will be null
             // Accessing any null values of arg1 or arg2 will crash CC horribly
@@ -126,7 +123,7 @@ namespace JDFixer.Managers
             else // Map not dled
             {
                 DiffcultyBeatmapUpdated(new BeatmapKey(), null);
-            }*/
+            }
         }
 
 
